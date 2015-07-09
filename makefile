@@ -3,7 +3,7 @@ CC=g++-mp-4.9
 LINK=g++-mp-4.9
 # Set options for the compiler
 CCFLAGS= -c -O3 -fopenmp -I/Users/admin/git/quickfits
-LINKOPTS= -L/Users/admin/fftw/lib -L/opt/local/lib/ -L/Users/admin/git/quickfits  -lm -lfftw3 -fopenmp -llapack -lblas -lfftw3_threads -lcfitsio -lquickfits -O3
+LINKOPTS= -L/Users/admin/fftw/lib -L/opt/local/lib/ -L/Users/admin/git/quickfits  -lm -lfftw3 -fopenmp -llapack -lblas -lfftw3_threads -lquickfits -lcfitsio -O3
 
 all: read_driver FT_convolution pmem update_Lagrangian CE_functions map_stats link
 
