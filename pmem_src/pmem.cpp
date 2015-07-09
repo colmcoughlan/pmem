@@ -136,7 +136,16 @@ int main()
 	cout<<"Reading driver"<<endl;
 	err = read_driver("mempy_driver.dat", npol, filename_dirty_map, filename_dirty_beam, filename_default_map, filename_mask, zsf, conserve_flux
 , rms_theoretical, niter, restoring_beam, noise_box, acceleration_factor, q_factor, pol_upweight_factor, output_name, ignore_edge_pixels, debug);
-	cout<<"Read complete"<<endl;
+	if( err !=0 )
+	{
+		cout<<"Error reading from "<<"mempy_driver.dat"<<endl;
+		cout<<"Exiting program..."<<endl;
+		return(1);
+	}
+	else
+	{
+		cout<<"Read complete"<<endl;
+	}
 
 
 	err = quickfits_read_map_header( filename_dirty_map[0].c_str() , &imsize , &cell , &ra , &dec , centre_shift , rotations , &freq , &freq_delta , &stokes[0] , object , observer , telescope , &equinox , date_obs , &bmaj , &bmin , &bpa , &ncc ,-1 );
@@ -607,10 +616,12 @@ int main()
 			cout<<endl<<"Error detected in new_ABG, err = "<<err<<endl<<endl;
 			break;
 		}
+		
+		alpha = max( alpha , max(beta,gamma));
 
 		if(rms_theoretical[0] !=0.0 and ctr > 3 )
 		{
-			if( current_rms[0]/rms_theoretical[0] < 5.0)
+			if( current_rms[0]/rms_theoretical[0] < 500.0)
 			{
 				cout<<"Restricting changes in Lagrangian parameters"<<endl;
 				force_chi2_method = true;
@@ -666,6 +677,9 @@ int main()
 			break;
 		}
 
+		temp = find_j0( current_model , current_residuals, mask , default_map2 , alpha , beta , gamma , imsize, ignore_edge_pixels , npol , q , new_model, current_model);
+		cout<<"Old J0 = "<<J0<<".Fancy J0 = "<<temp<<endl;
+		J0 = temp;
 
 		// convolve new model maps with dirty beam and get new residual maps
 
@@ -693,7 +707,7 @@ int main()
 		rescale_step = 0.5 * (rescale_step + old_rescale_step);
 		rescale_step = min( rescale_step , step_limit / step_length1 );
 		old_rescale_step = rescale_step;
-		
+
 		if(debug)
 		{
 			cout<<"Initial step, Rescaling factor, step limit = "<<step_length1<<" , "<<rescale_step<<" , "<<step_limit<<endl;	// output some info
@@ -715,11 +729,6 @@ int main()
 				cout<<endl<<"Error detected in interpolation of new and old residuals, err = "<<err<<endl<<endl;
 				break;
 			}
-
-			if(debug)
-			{
-//				cout<<"Interpolating current and new models."<<endl;
-			}
 		}
 		else
 		{
@@ -736,19 +745,7 @@ int main()
 				cout<<endl<<"Error detected replacing new and old residuals, err = "<<err<<endl<<endl;
 				break;
 			}
-
-			if(debug)
-			{
-//				cout<<"Replacing current model with new model."<<endl;
-			}
 		}
-/*	
-		if((fabs(step_length1-1.0) < 0.05) and (fabs(rescale_step - step_limit) < 0.05))
-		{
-			q *= 0.95;
-			cout<<endl<<endl<<endl<<"Q updated to "<<q<<endl<<endl<<endl;
-		}
-*/
 
 		if(fabs(step_length1-1.0) < 0.05)
 		{
@@ -767,7 +764,7 @@ int main()
 			cout<<"GradE.J, GradF.J, GradG.J = "<<grad.EJ<<" , "<<grad.FJ<<" , "<<grad.GJ<<endl;
 		}
 
-		converged_temp = true;	// check for convergence
+
 
 
 

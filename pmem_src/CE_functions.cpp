@@ -298,6 +298,71 @@ int cal_step(double** model , double** residual, double* mask, double* default_m
 	return(0);
 }
 
+double find_j0(double** model , double** residual, double* mask, double* default_map2 , double alpha , double beta , double gamma , int imsize, int ignore_pixels , int npol, double q , double** new_mod, double** old_mod)
+{
+	double p , plog , pexp , m , dh , dh2 , gradJ , metric , step;
+	int i, j, k, ctr;
+	int imsize2 = imsize * imsize;
+	int right_pixel_limit = imsize - ignore_pixels;
+
+	double J0 = 0.0;
+
+	#pragma omp parallel for  collapse(2) reduction(+:J0) private(ctr, k,p,m,plog,pexp,dh,dh2,gradJ,metric,step)	// eff : rewrite to reduce operations (default map^2, 2* q )
+	for(i=ignore_pixels;i<right_pixel_limit;i++)
+	{
+		for(j=ignore_pixels;j<right_pixel_limit;j++)
+		{
+			ctr = i * imsize + j;
+			if(mask[ctr] > 0)
+			{
+				p = 0.0;
+				if(npol>1)
+				{
+					for(k=1;k<npol;k++)
+					{
+						p += (model[k][ctr] * model[k][ctr]);
+					}
+					p = sqrt(p);
+
+					if(p > 0.01 * model[0][ctr])
+					{
+						plog = 0.5 * log( ( model[0][ctr] - p ) / ( model[0][ctr] + p) ) / p;
+						pexp = ( ( model[0][ctr] / (p * p - model[0][ctr] * model[0][ctr] ) ) - plog ) / (p * p);
+					}
+					else
+					{
+						m = p / model[0][ctr];
+						plog = - (1.0 + (m * m / 3.0) ) / model[0][ctr];
+						pexp = - ( (2.0 / 3.0) + 0.8 * m * m) / (model[0][ctr] * model[0][ctr] * model[0][ctr]);	// Taylor series expansion of above for small m (see Mathematica)
+					}
+				}
+
+				for(k=0;k<npol;k++)
+				{
+					if(k==0)
+					{
+						dh = - 0.5 * log( (model[0][ctr] * model[0][ctr] - p * p) / (default_map2[ctr]));
+						dh2 = - model[0][ctr] / (model[0][ctr] * model[0][ctr] - p * p);
+						gradJ = dh - 2.0 * alpha * residual[0][ctr] - gamma;
+						metric = 1.0 / ( 2.0 * q * alpha - dh2);
+					}
+					else
+					{
+						dh = model[k][ctr] * plog;
+						dh2 = plog + model[k][ctr] * model[k][ctr] * pexp;
+						gradJ = dh - 2.0 * beta * residual[k][ctr];
+						metric = 1.0/( 2.0 * q * beta - dh2);
+					}
+			
+					J0 += gradJ * (new_mod[k][ctr] - old_mod[k][ctr]);
+				}
+			}
+		}
+	}
+
+	return(J0);
+}
+
 /*
 	take_step
 
@@ -332,7 +397,7 @@ int take_step(double** model , double** step , double step_length , double step_
 
 
 	// check to see how much the total flux will change by
-
+/*
 	max_pixel_change = 0.0;
 	min_pixel_change = 0.0;
 	for(ctr=0; ctr < imsize2; ctr++)
@@ -355,7 +420,7 @@ int take_step(double** model , double** step , double step_length , double step_
 	{
 		step_length /= factor;
 	}
-
+*/
 	#pragma omp parallel for  collapse(2) private( ctr, pnew, k, inew, factor)
 	for(i=ignore_pixels;i<right_pixel_limit;i++)
 	{
