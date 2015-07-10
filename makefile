@@ -30,4 +30,4 @@ link:
 	$(LINK) -o pmem pmem.o read_driver.o FT_convolution.o update_Lagrangian.o CE_functions.o map_stats.o $(LINKOPTS)
 
 clean:
-	rm -rf *.o nmem
+	rm -rf *.o pmem
