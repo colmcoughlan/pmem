@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" ?>
+<casaxml xmlns="http://casa.nrao.edu/schema/psetTypes.html"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://casa.nrao.edu/schema/casa.xsd
+file:///opt/casa/code/xmlcasa/xml/casa.xsd">
+
+
+<task type="function" name="pmem" category="imaging">
+
+  <shortdescription>run pmem algorithm</shortdescription>
+      
+  <description>later</description>
+
+  <input>
+
+    <param type="int" name="nbrpols" >
+      <description>number of pols</description>
+         <value>0</value>
+    </param>
+    
+    <param type="string" name="filenameI">
+      <description>filename of I</description>
+         <value></value>
+    </param>
+    
+    <param type="string" name="filenameQ" >
+      <description>filename of Q</description>
+         <value></value>
+    </param>
+    
+    <param type="string" name="filenameU" >
+      <description>filename of U</description>
+         <value></value>
+    </param>
+    
+    <param type="string" name="filenameV">
+      <description>filename of V></description>
+         <value></value>
+    </param>
+    
+    <param type="string" name="filenamedirtybeam">
+      <description>filename of dirty beam</description>
+         <value></value>
+    </param>
+    
+    <param type="string" name="filenamedefaultmap">
+      <description>filename of default map</description>
+         <value></value>
+    </param>
+    
+    <param type="string" name="filenamedefaultmask">
+      <description>filename of default mask</description>
+         <value></value>
+    </param>
+    
+    <param type="double" name="estimatedspacingflux">
+      <description>estimated spacing flux</description>
+         <value>0</value>
+    </param>
+    
+    <param type="boolean" name="conservefluxmode">
+      <description>conserve flux mode</description>
+         <value>False</value>
+    </param>
+     
+    <param type="double" name="rmsI">
+      <description>rms theorical I</description>
+         <value>0</value>
+    </param>
+
+     <param type="double" name="rmsQ">
+      <description>rms theorical Q</description>
+         <value>0</value>
+    </param>
+    
+    <param type="double" name="rmsU">
+      <description>rms theorical U</description>
+         <value>0</value>
+    </param>
+    
+    <param type="double" name="rmsV">
+      <description>rms theorical V</description>
+         <value>0</value>
+    </param>
+    
+    <param type="int" name="nbrinter">
+      <description>number of interation</description>
+         <value>0</value>
+    </param>
+    
+    <param type="double" name="bmaj">
+      <description>bmaj</description>
+         <value>0</value>
+    </param>
+   
+    <param type="double" name="bmin">
+      <description>bmin</description>
+         <value>0</value>
+    </param>
+   
+    <param type="double" name="bpa">
+      <description>bpa</description>
+         <value>0</value>
+    </param>
+   
+    <param type="int" name="blcx">
+      <description>blcx</description>
+         <value>0</value>
+    </param>
+   
+    <param type="int" name="blcy">
+      <description>blcy</description>
+         <value>0</value>
+    </param>
+   
+    <param type="int" name="trcx">
+      <description>trcx</description>
+         <value>0</value>
+    </param>
+   
+    <param type="int" name="trcy">
+      <description>trcy</description>
+         <value>0</value>
+    </param>
+   
+    <param type="double" name="accelfactor">
+      <description>acceleration factor</description>
+         <value>0</value>
+    </param>
+   
+    <param type="double" name="qfactor">
+      <description>q factor</description>
+         <value>0</value>
+    </param>
+   
+    <param type="double" name="polfactor">
+      <description>polarisation factor</description>
+         <value>0</value>
+    </param>
+   
+    <param type="string" name="outputname">
+      <description>output name</description>
+         <value></value>
+    </param>
+   
+    <param type="int" name="ignoreedgepixels">
+      <description>ignore edge pixels</description>
+         <value>0</value>
+    </param>
+   
+    <param type="boolean" name="debug">
+      <description>debug mode option</description>
+         <value>False</value>
+    </param>
+
+
+  
+
+  </input>
+
+  <returns type="void"/>
+
+
+</task>
+
+</casaxml>
