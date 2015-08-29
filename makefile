@@ -1,6 +1,6 @@
 # Set compiler to g++.
-CC=g++
-LINK=g++
+CC=g++-mp-4.9
+LINK=g++-mp-4.9
 # Set options for the compiler
 CCFLAGS= -c -O3 -fopenmp -I/Users/admin/git/quickfits
 LINKOPTS= -L/Users/admin/fftw/lib -L/opt/local/lib/ -L/Users/admin/git/quickfits  -lm -lfftw3 -fopenmp -llapack -lblas -lfftw3_threads -lquickfits -lcfitsio -O3

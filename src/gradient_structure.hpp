@@ -1,5 +1,5 @@
 /*
-    pmem_heads.hpp is a header file used by pmem and some programs it links with
+    gradient_structure.hpp is a header file used by pmem and some programs it links with
     Copyright (C) 2012  Colm Coughlan
 
     This program is free software: you can redistribute it and/or modify

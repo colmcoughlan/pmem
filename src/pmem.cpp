@@ -1,3 +1,5 @@
+// Version 1.01.
+
 /*
  Copyright (c) 2014, Colm Coughlan
  All rights reserved.
@@ -28,30 +30,11 @@ int zero_array(double* array, int imsize);
 
 int main()
 {
-	double ra;
-	double dec;
-	int imsize;
-	double cell;	// stored in degrees
+	cout<<"PMEM version 1.01"<<endl;
 
-	double centre_shift[2];	// where the peak of the source is on the map (x and y coords)
-	double rotations[2];	// any rotation applied to the map
-	int stokes[4];		// enough room to hold stokes parameters for 4 maps
-
-	double freq;	// stored in Hz
-	double freq_delta;
-
-	char object[FLEN_VALUE];
-	char observer[FLEN_VALUE];	// information about the source
-	char telescope[FLEN_VALUE];
-	double equinox;
-	char date_obs[FLEN_VALUE];
+	fitsinfo_map fitsi[4];
 
 	char history[] = "MEM deconvolution performed by PMEM. See PMEM logs for details.";
-
-	double bmaj;	// stored in degrees
-	double bmin;	// stored in degrees
-	double bpa;	// stored in degrees
-	int ncc;	// number of clean components
 
 	string line;
 	string filename_dirty_map[4];
@@ -75,6 +58,7 @@ int main()
 
 	int i,j , k,ctr;
 	int err;
+	int imsize;
 	int imsize2;
 	int npol;		// no. of polarisations being deconvolved
 	int niter;		// max no. of iterations
@@ -148,7 +132,8 @@ int main()
 	}
 
 
-	err = quickfits_read_map_header( filename_dirty_map[0].c_str() , &imsize , &cell , &ra , &dec , centre_shift , rotations , &freq , &freq_delta , &stokes[0] , object , observer , telescope , &equinox , date_obs , &bmaj , &bmin , &bpa , &ncc ,-1 );
+//	err = quickfits_read_map_header( filename_dirty_map[0].c_str() , &imsize , &cell , &ra , &dec , centre_shift , rotations , &freq , &freq_delta , &stokes[0] , object , observer , telescope , &equinox , date_obs , &bmaj , &bmin , &bpa , &ncc ,-1 );
+	err = quickfits_read_map_header( filename_dirty_map[0].c_str() , &fitsi[0] );
 	if( err != 0 )
 	{
 		cout<<"Error reading header from "<<filename_dirty_map[0]<<endl;
@@ -156,7 +141,8 @@ int main()
 		return(1);
 	}
 
-	imsize2=imsize*imsize;
+	imsize = fitsi[0].imsize_ra;
+	imsize2= imsize * imsize;
 
 	//check that inputs are valid
 	
@@ -232,9 +218,9 @@ int main()
 
 	if( restoring_beam[0] == 0 || restoring_beam[1] ==0)	// if no restoring beam is given, use the beam from the dirty maps
 	{
-		restoring_beam[0] = bmaj;
-		restoring_beam[1] = bmin;
-		restoring_beam[2] = bpa;	// storing in degrees
+		restoring_beam[0] = fitsi[0].bmaj;
+		restoring_beam[1] = fitsi[0].bmin;
+		restoring_beam[2] = fitsi[0].bpa;	// storing in degrees
 	}
 	else
 	{
@@ -285,7 +271,7 @@ int main()
 	cout<<"\t BMAJ = "<<restoring_beam[0]*3600.0<<" as, BMIN = "<<restoring_beam[1]*3600.0<<" as, BPA = "<<restoring_beam[2]<<" deg."<<endl<<endl;
 	cout<<"Map details :"<<endl;
 	cout<<"\t Imsize = "<<imsize<<" pixels."<<endl;
-	cout<<"\t Cellsize = "<<cell*(3600.0*1000.0)<<" mas."<<endl<<endl;
+	cout<<"\t Cellsize = "<<fitsi[0].cell_ra*(3600.0*1000.0)<<" mas."<<endl<<endl;
 	cout<<"Running parameters :"<<endl;
 	cout<<"\t Acceleration factor = "<<acceleration_factor<<endl;
 	cout<<"\t Q factor = "<<q_factor<<endl;
@@ -295,8 +281,13 @@ int main()
 
 	// Now read in all maps
 
-	ncc=0;	// turn off any clean component handling
-	err = quickfits_read_map(filename_dirty_map[0].c_str() , dirty_map[0] , imsize2 , null_double , null_double , null_double , 0 , 0);
+	// turn off any clean component handling
+	for(i=0;i<npol;i++)
+	{
+		fitsi[0].ncc = 0;
+	}
+	
+	err = quickfits_read_map(filename_dirty_map[0].c_str() , fitsi[0], dirty_map[0] , null_double , null_double , null_double);
 	if(err!=0)
 	{
 		cout<<endl<<"Error detected reading map from "<<filename_dirty_map[0]<<", err = "<<err<<endl<<endl;
@@ -307,7 +298,7 @@ int main()
 
 	for(i=1;i<npol;i++)	// read in all the polarisation maps (if any)
 	{
-		err = quickfits_read_map_header( filename_dirty_map[i].c_str() , &imsize , &cell , &ra , &dec , centre_shift , rotations , &freq , &freq_delta , &stokes[i] , object , observer , telescope , &equinox , date_obs , &temp , &temp , &temp , &ncc , -1);	// note the only new piece of information here is the stokes value (read in temp to avoid overwriting bmaj etc.)
+		err = quickfits_read_map_header( filename_dirty_map[i].c_str() , &fitsi[i]);	// note the only new piece of information here is the stokes value (read in temp to avoid overwriting bmaj etc.)
 		if(err!=0)
 		{
 			cout<<endl<<"Error detected reading header from "<<filename_dirty_map[i]<<", err = "<<err<<endl<<endl;
@@ -316,7 +307,7 @@ int main()
 		}
 
 
-		err = quickfits_read_map( filename_dirty_map[i].c_str() , dirty_map[i] , imsize2 , null_double , null_double , null_double , 0 , 0 );
+		err = quickfits_read_map( filename_dirty_map[i].c_str(), fitsi[i] , dirty_map[i] , null_double , null_double , null_double);
 		if(err!=0)
 		{
 			cout<<endl<<"Error detected reading map from "<<filename_dirty_map[i]<<", err = "<<err<<endl<<endl;
@@ -326,7 +317,7 @@ int main()
 	}
 
 
-	err = quickfits_read_map( filename_dirty_beam.c_str() , dirty_beam , imsize2 , null_double , null_double , null_double , 0, 0 );
+	err = quickfits_read_map( filename_dirty_beam.c_str(), fitsi[0] , dirty_beam , null_double , null_double , null_double );
 	if(err!=0)
 	{
 		cout<<endl<<"Error detected reading beam from "<<filename_dirty_beam<<", err = "<<err<<endl<<endl;
@@ -336,7 +327,7 @@ int main()
 
 	// estimate number of pixels per beam
 
-	pixels_per_beam = bmaj * bmin * M_PI / ( 4.0 * log(2) * cell * cell );
+	pixels_per_beam = fitsi[0].bmaj * fitsi[0].bmin * M_PI / ( 4.0 * log(2) * fitsi[0].cell_ra * fitsi[0].cell_dec );
 	if(pixels_per_beam <= 0 )
 	{
 		cout<<"Error in estimating beamize. Strictly positive number of pixels per beam required."<<endl;
@@ -358,8 +349,8 @@ int main()
 
 	if( have_mask )
 	{
-		ncc = 0;
-		err = quickfits_read_map( filename_mask.c_str() , mask , imsize2 , null_double , null_double , null_double , 0 , 0 );	// load default map if given
+		fitsi[0].ncc = 0;
+		err = quickfits_read_map( filename_mask.c_str() , fitsi[0] , mask , null_double , null_double , null_double );	// load default map if given
 		if(err!=0)
 		{
 			cout<<"Error loading "<<filename_mask<<endl;
@@ -393,8 +384,8 @@ int main()
 	{
 		cout<<"Using "<<filename_default_map<<" as default map."<<endl;
 
-		ncc = 0;
-		err = quickfits_read_map( filename_default_map.c_str() , default_map2 , imsize2 , null_double , null_double , null_double , 0 , 0 );	// load default map if given
+		fitsi[0].ncc = 0;
+		err = quickfits_read_map( filename_default_map.c_str() , fitsi[0] , default_map2 , null_double , null_double , null_double );	// load default map if given
 		if(err!=0)
 		{
 			cout<<"Error loading "<<filename_default_map<<endl;
@@ -931,7 +922,7 @@ int main()
 		}
 	}
 
-	gen_gauss(new_model[0], imsize , cell, restoring_beam[0] , restoring_beam[1] , restoring_beam[2], peak);	// make restoring beam
+	gen_gauss(new_model[0], imsize , fitsi[0].cell_ra, restoring_beam[0] , restoring_beam[1] , restoring_beam[2], peak);	// make restoring beam
 
 	if( pad_factor == 1)
 	{
@@ -947,7 +938,7 @@ int main()
 	}
 
 
-	temp = restoring_beam[0] * restoring_beam[1] * M_PI / ( 4.0 * log(2) * cell * cell );	// set time =  number of pixels in restoring beam
+	temp = restoring_beam[0] * restoring_beam[1] * M_PI / ( 4.0 * log(2) * fitsi[0].cell_ra * fitsi[0].cell_dec );	// set time =  number of pixels in restoring beam
 	// there is a good possiblity that temp = pixels per beam, but if the restoring beam is different to the initial beam, then the units of Jy/Beam in the residuals need to be converted to Jy/restoring beam.
 
 	temp = temp / pixels_per_beam;
@@ -974,7 +965,7 @@ int main()
 		line.append("_Model_S");
 		line.append(int2str(i+1));
 		line.append(".fits");
-		err = quickfits_write_map( line.c_str() , current_model[i] , imsize , cell , ra , dec , centre_shift , rotations , freq , freq_delta , stokes[i] , object , observer , telescope , equinox , date_obs , history , restoring_beam[0] , restoring_beam[1] , restoring_beam[2] , ctr , false);
+		err = quickfits_write_map( line.c_str() , current_model[i] , fitsi[i] , history);
 		if(err!=0)
 		{
 			cout<<endl<<"Error detected in attempting to write to "<<line<<", err = "<<err<<endl<<endl;
@@ -985,7 +976,7 @@ int main()
 		line.append("_Convolved_S");
 		line.append(int2str(i+1));
 		line.append(".fits");
-		err = quickfits_write_map( line.c_str() , convolved_model[i] , imsize , cell , ra , dec , centre_shift , rotations , freq , freq_delta , stokes[i] , object , observer , telescope , equinox , date_obs , history , restoring_beam[0] , restoring_beam[1] , restoring_beam[2] , ctr , true);
+		err = quickfits_write_map( line.c_str() , convolved_model[i] , fitsi[i] , history);
 		if(err!=0)
 		{
 			cout<<endl<<"Error detected in attempting to write to "<<line<<", err = "<<err<<endl<<endl;
@@ -996,7 +987,7 @@ int main()
 		line.append("_Residual_S");
 		line.append(int2str(i+1));
 		line.append(".fits");
-		err = quickfits_write_map( line.c_str() , current_residuals[i] , imsize , cell , ra , dec , centre_shift , rotations , freq , freq_delta , stokes[i] , object , observer , telescope , equinox , date_obs , history , restoring_beam[0] , restoring_beam[1] , restoring_beam[2] , ctr , true);
+		err = quickfits_write_map( line.c_str() , current_residuals[i] , fitsi[i] , history);
 		if(err!=0)
 		{
 			cout<<endl<<"Error detected in attempting to write to "<<line<<", err = "<<err<<endl<<endl;
@@ -1007,7 +998,7 @@ int main()
 		line.append("_Final_S");
 		line.append(int2str(i+1));
 		line.append(".fits");
-		err = quickfits_write_map( line.c_str() , new_model[i] , imsize , cell , ra , dec , centre_shift , rotations , freq , freq_delta , stokes[i] , object , observer , telescope , equinox , date_obs , history , restoring_beam[0] , restoring_beam[1] , restoring_beam[2] , ctr , true);
+		err = quickfits_write_map( line.c_str() , new_model[i] , fitsi[i] , history);
 		if(err!=0)
 		{
 			cout<<endl<<"Error detected in attempting to write to "<<line<<", err = "<<err<<endl<<endl;
