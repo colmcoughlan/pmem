@@ -87,6 +87,7 @@ int main()
 	double alpha_old, beta_old, gamma_old;
 	bool force_chi2_method = false;
 	bool have_mask;
+	bool scale_residual = false;
 	int imsize2_unmasked;
 
 
@@ -129,6 +130,11 @@ int main()
 	else
 	{
 		cout<<"Read complete"<<endl;
+	}
+	
+	for(i=0;i<4;i++)
+	{
+		fitsi[i].cc_table_version = -1;
 	}
 
 
@@ -224,7 +230,7 @@ int main()
 	}
 	else
 	{
-		restoring_beam[0] /= 3600.0;
+		restoring_beam[0] /= 3600.0;	// convert to degrees from arcsec otherwise
 		restoring_beam[1] /= 3600.0;
 	}
 
@@ -642,19 +648,7 @@ int main()
 			cout<<endl<<"Error detected in cal_step, err = "<<err<<endl<<endl;
 			break;
 		}
-/*
-		line.assign("StokesIstep.fits");
-		line.append(int2str(outnum));
-		err = quickfits_write_map( line.c_str() , new_model[0] , imsize , cell , ra , dec , centre_shift , rotations , freq , freq_delta , stokes[i] , object , observer , telescope , equinox , date_obs , history , restoring_beam[0] , restoring_beam[1] , restoring_beam[2] , ctr , false);
-		if(outnum == 0)
-		{
-			outnum =1;
-		}
-		else
-		{
-			outnum=0;
-		}
-*/
+
 		step_limit = 1.0;
 		if( grad.JJ > 0 )
 		{
@@ -937,12 +931,15 @@ int main()
 		convolve( current_model[i] , dirty_beam_ft , imsize , pad_factor  , convolved_model[i] , forward_transform , backward_transform , double_buff , complex_buff);
 	}
 
-
-	temp = restoring_beam[0] * restoring_beam[1] * M_PI / ( 4.0 * log(2) * fitsi[0].cell_ra * fitsi[0].cell_dec );	// set time =  number of pixels in restoring beam
-	// there is a good possiblity that temp = pixels per beam, but if the restoring beam is different to the initial beam, then the units of Jy/Beam in the residuals need to be converted to Jy/restoring beam.
-
-	temp = temp / pixels_per_beam;
-
+	if(scale_residual)
+	{	// there is a good possiblity that temp = pixels per beam, but if the restoring beam is different to the initial beam, then the units of Jy/Beam in the residuals need to be converted to Jy/restoring beam.
+		temp = restoring_beam[0] * restoring_beam[1] * M_PI / ( 4.0 * log(2) * fitsi[0].cell_ra * fitsi[0].cell_dec );	// set time =  number of pixels in restoring beam
+		temp = temp / pixels_per_beam;
+	}
+	else
+	{
+		temp = 1.0;
+	}
 	cout<<endl<<endl<<"Ratio of restoring beam to \"natural\" beam = "<<temp<<endl;
 
 	#pragma omp parallel for collapse(2)
@@ -961,6 +958,16 @@ int main()
 
 	for(i=0;i<npol;i++)	// write out convolved models
 	{
+		clip_edges(current_model[i], NAN, ignore_edge_pixels, imsize);
+		clip_edges(convolved_model[i], NAN, ignore_edge_pixels, imsize);
+		clip_edges(current_residuals[i], NAN, ignore_edge_pixels, imsize);
+		clip_edges(new_model[i], NAN, ignore_edge_pixels, imsize);
+	
+		fitsi[i].bmaj = restoring_beam[0];	// set current beam
+		fitsi[i].bmin = restoring_beam[1];
+		fitsi[i].bpa = restoring_beam[2];
+
+		fitsi[i].have_beam = false;	// no beam for model map
 		line.assign(output_name);
 		line.append("_Model_S");
 		line.append(int2str(i+1));
@@ -971,7 +978,7 @@ int main()
 			cout<<endl<<"Error detected in attempting to write to "<<line<<", err = "<<err<<endl<<endl;
 		}
 
-
+		fitsi[i].have_beam = true;
 		line.assign(output_name);
 		line.append("_Convolved_S");
 		line.append(int2str(i+1));

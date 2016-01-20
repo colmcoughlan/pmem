@@ -1,9 +1,9 @@
 # Set compiler to g++.
-CC=g++-mp-4.9
-LINK=g++-mp-4.9
+CC=g++-5
+LINK=g++-5
 # Set options for the compiler
-CCFLAGS= -c -O3 -fopenmp -I/Users/admin/git/quickfits
-LINKOPTS= -L/Users/admin/fftw/lib -L/opt/local/lib/ -L/Users/admin/git/quickfits  -lm -lfftw3 -fopenmp -llapack -lblas -lfftw3_threads -lquickfits -lcfitsio -O3
+CCFLAGS= -c -O3 -fopenmp -I/usr/local/Cellar/cfitsio/3.370/include/ -I/Users/admin/git/quickfits
+LINKOPTS= -L/usr/local/Cellar/cfitsio/3.370/lib -lcfitsio -L/Users/admin/git/quickfits -lm -lfftw3 -fopenmp -llapack -lblas -lfftw3_threads -lquickfits -O3
 
 all: read_driver FT_convolution pmem update_Lagrangian CE_functions map_stats link
 
