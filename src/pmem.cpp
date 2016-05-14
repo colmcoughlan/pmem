@@ -397,6 +397,10 @@ int main()
 			cout<<"Error loading "<<filename_default_map<<endl;
 			goto free_mem_exit;
 		}
+		for(i = 0;i< imsize2;i++)
+		{
+			default_map2[i] = default_map2[i] * default_map2[i];
+		}
 	}
 	else
 	{
