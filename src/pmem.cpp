@@ -154,7 +154,7 @@ int main()
 	
 	noise_box[0] = ignore_edge_pixels;
 	noise_box[1] = noise_box[0];
-	noise_box[2] = imsize - ignore_edge_pixels;
+	noise_box[2] = imsize - ignore_edge_pixels - 1;
 	noise_box[3] = noise_box[2];
 	
 	for(i=0;i<4;i++)
