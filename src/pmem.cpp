@@ -816,7 +816,7 @@ int main()
 
 		if(conserve_flux && (!estimate_flux) )
 		{
-			converged = converged && ( total_flux - zsf < flux_tolerance * zsf);
+			converged = converged && ( fabs(total_flux - zsf) < flux_tolerance * zsf);
 			if(debug&&converged)
 			{
 				cout<<"Flux has converged."<<endl;
