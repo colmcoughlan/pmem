@@ -509,7 +509,7 @@ int take_step(double** model , double** step , double step_length , double step_
 		on return, 0 if no error, 1 if error detected
 */
 
-int check_step(double** old_model , double** new_model , double** new_residual, double* mask, double* default_map2 , double alpha , double beta , double gamma , int imsize, int ignore_pixels , int npol, double q , double& J1)
+double check_step(double** old_model , double** new_model , double** new_residual, double* mask, double* default_map2 , double alpha , double beta , double gamma , int imsize, int ignore_pixels , int npol, double q)
 {
 	// Declare some variables
 
@@ -518,7 +518,7 @@ int check_step(double** old_model , double** new_model , double** new_residual, 
 	int imsize2 = imsize * imsize;
 	int right_pixel_limit = imsize - ignore_pixels;
 
-	double J1_temp = 0.0;
+	double J1 = 0.0;
 
 	// Start openmp for loop if possible to efficiently loop over every pixel
 
@@ -569,24 +569,13 @@ int check_step(double** old_model , double** new_model , double** new_residual, 
 					}
 
 					step = new_model[k][ctr] - old_model[k][ctr];	// Step = difference between the two maps
-					J1_temp += gradJ * step;			// The change in J due to this is gradJ
+					J1 += gradJ * step;			// The change in J due to this is gradJ
 				}
 			}
 		}
 	}
 
-	J1 = J1_temp;
-
-	if(J1 == J1)	// make sure J1 is not infinity
-	{
-		ctr = 0;
-	}
-	else
-	{
-		ctr = 1;
-	}
-
-	return(ctr);
+	return(J1);
 }
 
 /*

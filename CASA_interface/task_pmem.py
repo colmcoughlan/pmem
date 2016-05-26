@@ -37,11 +37,12 @@ def pmem(
               polarisationfactor,
               outputname,
               ignoreedgepixels,
+              Solver,
               debug):
 	casalog.filter('INFO')
         casalog.origin('pmem')
 
-	l = [nbrpols, FilenameofI, FilenameofQ, FilenameofU, FilenameofV, Filenameofdirtybeam, FilenameofdefaultMap, Filenameofdefaultmask, estimatedspacingflux, conservefluxmode, rmsI, rmsQ, rmsU, rmsV, nbreofiteration, bmaj, bmin, bpa, blcx, blcy, trcx, trcy, accelerationfactor, qfactor, polarisationfactor, outputname, ignoreedgepixels, debug]
+	l = [nbrpols, FilenameofI, FilenameofQ, FilenameofU, FilenameofV, Filenameofdirtybeam, FilenameofdefaultMap, Filenameofdefaultmask, estimatedspacingflux, conservefluxmode, rmsI, rmsQ, rmsU, rmsV, nbreofiteration, bmaj, bmin, bpa, blcx, blcy, trcx, trcy, accelerationfactor, qfactor, polarisationfactor, outputname, ignoreedgepixels, Solver, debug]
 
   
      

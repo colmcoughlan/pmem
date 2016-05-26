@@ -4,7 +4,7 @@
 	using namespace std;
 
 int read_driver(string driver_filename, int &npol, string* filename_dirty_map, string &filename_dirty_beam, string &filename_default_map, string &filename_mask, double &zsf, bool &conserve_flux_mode
-, double* rms_theoretical, int &niter, double* beam, int* box, double &acc_factor, double &q_factor, double &pol_factor, string &output_name, int &ignore_edge_pixels, bool &debug)
+, double* rms_theoretical, int &niter, double* beam, int* box, double &acc_factor, double &q_factor, double &pol_factor, string &output_name, int &ignore_edge_pixels, bool &nr_solve, bool &debug)
 {
 	fstream fout;	// file stream
 	string line;	// temporary line
@@ -91,6 +91,16 @@ int read_driver(string driver_filename, int &npol, string* filename_dirty_map, s
 
 	getline(fout,line);
 	ignore_edge_pixels = atoi(line.c_str());
+	
+	getline(fout,line);
+	if(atoi(line.c_str())==0)	// read in solution mode option (0 = newton-raphson, 1 = steepest-descent)
+	{
+		nr_solve=true;
+	}
+	else
+	{
+		nr_solve=false;
+	}
 
 	getline(fout,line);
 	if(atoi(line.c_str())==1)	// read in debug mode option
