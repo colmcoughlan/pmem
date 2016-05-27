@@ -86,7 +86,7 @@ double cal_step_sd(double** model , double** residual, double* mask, double* def
 	return(sqrt(j0));
 }
 
-double get_max_flux(double* model, double* mask, int imsize2)
+double get_total_flux(double* model, double* mask, int imsize2)
 {
 	int i,k;
 	double flux;
@@ -111,12 +111,14 @@ int steepest_descent(double** current_model, double** new_model, double** curren
 	double total_flux, temp;
 	int i, k, err;
 	int imsize2 = imsize * imsize;
+	
+	double eps = 0.01;
 	step_limit = 1.0;
 
 	cout<<"Iteration "<<ctr+1<<endl;
 	J0 = cal_step_sd( current_model , current_residuals, mask , default_map2 , alpha , beta , gamma , imsize, ignore_edge_pixels , npol , q , new_model);
 	cout<<"\tJ0 = "<<J0<<endl;
-	step_length1 = 0.01/J0;
+	step_length1 = eps/J0;
 	J0 = J0 * step_length1;
 	cout<<"\tCurrent centre = "<<current_model[0][(imsize2+imsize)/2]<<endl;
 	err = take_step( current_model , new_model , step_length1 , 0.0 , imsize, ignore_edge_pixels , npol, total_flux, 0.0, zsf, min_flux);	// take the step calculated, but scaled by step_length1
@@ -192,7 +194,7 @@ int steepest_descent(double** current_model, double** new_model, double** curren
 	}
 	// update alpha, beta, gamma
 	
-	total_flux =  get_max_flux(current_model[0], mask, imsize2);
+	total_flux =  get_total_flux(current_model[0], mask, imsize2);
 	for(k=0;k<npol;k++)
 	{
 		current_rms[k] = rms_region( current_residuals[k] , noise_box[0] , noise_box[1] , noise_box[2] , noise_box[3] , imsize);	// this might actually go up at the start, as the residual map is not a noise map initially
@@ -221,7 +223,7 @@ int steepest_descent(double** current_model, double** new_model, double** curren
 	gamma = gamma + delta_G;
 
 
-	if(fabs(rescale_step) < 0.01)
+	if(fabs(rescale_step) < eps)
 	{
 		q *= max(min(sqrt(step_length1/0.01),1.1),0.9);
 		cout<<"qnew = "<<q<<endl;

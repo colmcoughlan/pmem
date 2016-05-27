@@ -26,5 +26,5 @@
 
 double h_func(double** model, double* mask, double* default_map, int npol, int imsize2);
 double cal_step_sd(double** model , double** residual, double* mask, double* default_map2 , double alpha , double beta , double gamma , int imsize, int ignore_pixels , int npol, double q , double** step_map);
-double get_max_flux(double* model, double* mask, int imsize2);
+double get_total_flux(double* model, double* mask, int imsize2);
 int steepest_descent(double** current_model, double** new_model, double** current_residuals, double** new_residuals, double* default_map2, double* mask, double** convolved_model, fftw_complex* dirty_beam_ft, fftw_complex* complex_buff, double* double_buff, int pad_factor, fftw_plan& forward_transform, fftw_plan& backward_transform, double** dirty_map, double& alpha, double& beta, double& gamma, double& alpha_old, double& beta_old, double& gamma_old, double zsf, int imsize, int ignore_edge_pixels, double& imin, double& imax, double min_flux, int npol, double& q, double pol_upweight_factor, double* chi2_rms, double* rms_theoretical, double* current_rms, int* noise_box, double& old_step_length1, double& old_rescale_step, bool conserve_flux, bool debug, int ctr);

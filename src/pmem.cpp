@@ -30,7 +30,7 @@ int zero_array(double* array, int imsize);
 
 int main()
 {
-	cout<<"PMEM version 1.10"<<endl;
+	cout<<"PMEM version 1.03"<<endl;
 
 	fitsinfo_map fitsi[4];
 
