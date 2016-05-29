@@ -24,6 +24,7 @@ double get_residual_map(double* dirty_map , double* convolved_model , double* re
 	int right_pixel_limit = imsize - ignore_pixels;
 	double chi2 = 0.0;
 
+	#pragma omp parallel for collapse(2) reduction( +: chi2) private (ctr)
 	for(i=ignore_pixels;i<right_pixel_limit;i++)
 	{
 		for(j=ignore_pixels;j<right_pixel_limit;j++)
@@ -34,7 +35,7 @@ double get_residual_map(double* dirty_map , double* convolved_model , double* re
 		}
 	}
 
-	return(chi2);
+	return(chi2);	// warning: this isn't exactly chi2 (needs to be scaled by expected error)
 }
 
 /*
@@ -62,7 +63,9 @@ double get_residual_map(double* dirty_map , double* convolved_model , double* re
 	on return = error (0 if none)
 */
 
-int get_info(double** model , double** residual, double* mask, double* default_map2 , gradient_structure& grad, double& total_flux , double alpha , double beta , double gamma , double& imin, double& imax , int imsize, int ignore_pixels , int npol, double q)
+int get_info(double** model , double** residual, double* mask, double* default_map2 , gradient_structure& grad, 
+double& total_flux , double alpha , double beta , double gamma , double& imin, double& imax , int imsize, int ignore_pixels , 
+int npol, double q, double** hessian_buffer, bool keep_hessian)
 {
 	double metric,dh,dh2,de,df,dg,temp,p,pexp,plog,m;
 	double EE , EF , EG , EH , FF , FG , FH , GG , GH , HH , II;
@@ -86,7 +89,7 @@ int get_info(double** model , double** residual, double* mask, double* default_m
 
 	err=0;
 
-//	#pragma omp parallel for collapse(2) reduction( +: EE , EG , EH , FF , FH , GG , GH , HH ,temp) private(ctr,k,p,m,plog,pexp,dh,dh2,de,df,dg,metric)
+	#pragma omp parallel for collapse(2) reduction( +: EE , EG , EH , FF , FH , GG , GH , HH ,temp) private(ctr,k,p,m,plog,pexp,dh,dh2,de,df,dg,metric)
 	for(i=ignore_pixels;i<right_pixel_limit;i++)
 	{
 		for(j=ignore_pixels;j<right_pixel_limit;j++)
@@ -125,12 +128,6 @@ int get_info(double** model , double** residual, double* mask, double* default_m
 						df = 0.0;										// derivative of the Stokes Q,U,V chi2 contribution of the pixel
 						dg = 1.0;										// derivative of the flux conservation term contribution of the pixel
 						metric = 1.0/( 2.0 * q * alpha - dh2);							// metric of the minimisation at this point
-/*
-						if(ctr == 524800)
-						{
-							cout<<"dh , dh2, de, metric = "<<dh<<","<<dh2<<" , "<<de<<" , "<<metric<<endl;
-						}
-*/
 					}
 					else	// Other Stokes parameters (same idea)
 					{
@@ -140,12 +137,6 @@ int get_info(double** model , double** residual, double* mask, double* default_m
 						df = 2.0 * residual[k][ctr];
 						dg = 0.0;
 						metric = 1.0/( 2.0 * q * beta - dh2);
-/*
-						if(ctr == 524800)
-						{
-							cout<<"k = "<<k<<": dh , dh2, df, metric = "<<dh<<","<<dh2<<" , "<<de<<" , "<<metric<<endl;
-						}
-*/
 					}
 
 					EE += de*metric*de;
@@ -157,6 +148,11 @@ int get_info(double** model , double** residual, double* mask, double* default_m
 					GH += dg*metric*dh;
 					HH += dh*metric*dh;
 					temp += metric;	// inner product 1.1
+					
+					if(keep_hessian)
+					{
+						hessian_buffer[k][ctr] = -1.0/metric;
+					}
 				}
 			}
 		}
@@ -204,6 +200,7 @@ int get_info(double** model , double** residual, double* mask, double* default_m
 
 	return(err);
 }
+
 
 /*
 	cal_step
@@ -306,6 +303,63 @@ int cal_step(double** model , double** residual, double* mask, double* default_m
 	}
 
 	J0 = J0_temp;
+
+	return(0);
+}
+
+// Fully evaluate and save gradj
+
+int find_gradj(double** model , double** residual, double* mask, double* default_map2 , double alpha , double beta , double gamma , int imsize, int ignore_pixels , int npol, double** gradJ)
+{
+	double p , plog , m , dh;
+	int i, j, k, ctr;
+	int imsize2 = imsize * imsize;
+	int right_pixel_limit = imsize - ignore_pixels;
+
+	#pragma omp parallel for  collapse(2) private(ctr, k,p,m,plog,dh)	// eff : rewrite to reduce operations (default map^2, 2* q )
+	for(i=ignore_pixels;i<right_pixel_limit;i++)
+	{
+		for(j=ignore_pixels;j<right_pixel_limit;j++)
+		{
+			ctr = i * imsize + j;
+			if(mask[ctr] > 0)
+			{
+				p = 0.0;
+				if(npol>1)
+				{
+					for(k=1;k<npol;k++)
+					{
+						p += (model[k][ctr] * model[k][ctr]);
+					}
+					p = sqrt(p);
+
+					if(p > 0.01 * model[0][ctr])
+					{
+						plog = 0.5 * log( ( model[0][ctr] - p ) / ( model[0][ctr] + p) ) / p;
+					}
+					else
+					{
+						m = p / model[0][ctr];
+						plog = - (1.0 + (m * m / 3.0) ) / model[0][ctr];
+					}
+				}
+
+				for(k=0;k<npol;k++)
+				{
+					if(k==0)
+					{
+						dh = - 0.5 * log( (model[0][ctr] * model[0][ctr] - p * p) / (default_map2[ctr]));
+						gradJ[k][ctr] = dh - 2.0 * alpha * residual[0][ctr] - gamma;
+					}
+					else
+					{
+						dh = model[k][ctr] * plog;
+						gradJ[k][ctr] = dh - 2.0 * beta * residual[k][ctr];
+					}
+				}
+			}
+		}
+	}
 
 	return(0);
 }
@@ -487,6 +541,73 @@ int take_step(double** model , double** step , double step_length , double step_
 	return(0);
 }
 
+// need a new take step function that doesn't discard the old step
+
+int take_step_nd(double** model , double** step , double** new_model , double step_length , double step_limit , int imsize, int ignore_pixels , int npol, double total_flux, double max_flux_change, double zsp, double min_flux)
+{
+
+	// First declare variables
+
+	double pnew , inew , factor;
+	int i, j, k , ctr ;
+	int imsize2 = imsize * imsize;
+	double step_sum, max_pixel_change, min_pixel_change;
+	int right_pixel_limit = imsize - ignore_pixels;
+
+	#pragma omp parallel for  collapse(2) private( ctr, pnew, k, inew, factor)
+	for(i=ignore_pixels;i<right_pixel_limit;i++)
+	{
+		for(j=ignore_pixels;j<right_pixel_limit;j++)
+		{
+			ctr = i * imsize + j;
+	/*
+			First take the Stokes I step
+			Record the old value
+			Set istep = step (which is the step length times the recommended step). If the step is negative, make sure it's not too negative
+			Update Stokes I value with new flux, or min_flux - whichever is greater
+	*/
+			new_model[0][ctr] = max( model[0][ctr] + step_length * step[0][ctr] , min_flux );
+			inew = new_model[0][ctr];
+
+		//		Polarisation section
+
+			if(npol > 1 )
+			{
+				// Find P, the total polarised flux, for the old and new cases
+
+				pnew = 0.0;
+
+				for(k=1;k<npol;k++)
+				{
+					pnew += pow( model[k][ctr] + step_length * step[k][ctr] , 2);
+				}
+
+				pnew = sqrt(pnew);
+
+				// Set a factor to ensure that m, the fractional polarisation, is an element of [0,1]
+
+				if( pnew < inew )
+				{
+					factor = 1.0;
+				}
+				else
+				{
+					factor = 0.8 * inew / pnew;
+				}
+
+				// Update the Q and U maps with their new values
+
+				for(k=1;k<npol;k++)
+				{
+					new_model[k][ctr] = factor * ( model[k][ctr] + step_length * step[k][ctr] );
+				}
+			}
+		}
+	}
+
+	return(0);
+}
+
 /*
 	check_step
 
@@ -522,7 +643,7 @@ double check_step(double** old_model , double** new_model , double** new_residua
 
 	// Start openmp for loop if possible to efficiently loop over every pixel
 
-//	#pragma omp parallel for collapse(2) reduction(+:J1_temp) private(ctr,k,m,p,plog,dh,gradJ,step)
+	#pragma omp parallel for collapse(2) reduction(+:J1) private(ctr,k,m,p,plog,dh,gradJ,step)
 	for(i=ignore_pixels;i<right_pixel_limit;i++)
 	{
 		for(j=ignore_pixels;j<right_pixel_limit;j++)
@@ -677,17 +798,20 @@ int interpolate_models(double** current_model , double** new_model , double frac
 int interpolate_residuals(double** current_residuals , double** new_residuals, double* chi2_rms , double frac_new , int imsize2 , int npol)
 {
 	double frac_old;
+	double chi2_temp;
 
 	frac_old = 1.0 - frac_new;
 
 	for(int j=0;j<npol;j++)
 	{
-		chi2_rms[j] = 0.0;
+		chi2_temp = 0.0;
+		#pragma omp parallel for reduction( +: chi2_temp)
 		for(int i=0;i<imsize2;i++)
 		{
 			current_residuals[j][i] = frac_old * current_residuals[j][i] + frac_new * new_residuals[j][i];
 			chi2_rms[j]+=(current_residuals[j][i]*current_residuals[j][i]);
 		}
+		chi2_rms[j] = chi2_temp;
 	}
 
 	return(0);

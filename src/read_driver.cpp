@@ -3,8 +3,8 @@
 #include "read_driver.hpp"
 	using namespace std;
 
-int read_driver(string driver_filename, int &npol, string* filename_dirty_map, string &filename_dirty_beam, string &filename_default_map, string &filename_mask, double &zsf, bool &conserve_flux_mode
-, double* rms_theoretical, int &niter, double* beam, int* box, double &acc_factor, double &q_factor, double &pol_factor, string &output_name, int &ignore_edge_pixels, bool &nr_solve, bool &debug)
+int read_driver(string driver_filename, int &npol, string* filename_dirty_map, string &filename_dirty_beam, string &filename_default_map, string &filename_mask, double &zsf, bool &conserve_flux, bool& estimate_flux
+, double* rms_theoretical, int &niter, double* beam, int* box, double &acc_factor, double &q_factor, double &pol_factor, string &output_name, int &ignore_edge_pixels, int &nr_solve, bool& do_bfgs, bool &debug)
 {
 	fstream fout;	// file stream
 	string line;	// temporary line
@@ -35,13 +35,34 @@ int read_driver(string driver_filename, int &npol, string* filename_dirty_map, s
 	
 	getline(fout,filename_default_map);	// filename of default map (if any)
 	
-	getline(fout,filename_mask);	// filename of default map (if any)
+	getline(fout,filename_mask);	// filename of mask (if any)
 	
 	getline(fout,line);
 	zsf = atof(line.c_str());	// read in estimated zero spacing flux
 
 	getline(fout,line);
-	conserve_flux_mode = atoi(line.c_str());
+	i = atoi(line.c_str());
+	switch(i)
+	{
+		case 0:
+			conserve_flux = false;
+			estimate_flux = false;
+			break;
+
+		case 1:
+			conserve_flux = true;
+			estimate_flux = false;
+			break;
+
+		case 2:
+			conserve_flux = true;
+			estimate_flux = true;
+			break;
+
+		default:
+			cout<<"Error reading flux control parameter."<<endl;
+			return(1);
+	}
 
 	for(i=0;i<npol;i++)
 	{
@@ -90,16 +111,21 @@ int read_driver(string driver_filename, int &npol, string* filename_dirty_map, s
 	getline(fout,output_name);	// read in output name
 
 	getline(fout,line);
-	ignore_edge_pixels = atoi(line.c_str());
+	ignore_edge_pixels = atoi(line.c_str());	// read in number of edge pixels to be clipped
 	
 	getline(fout,line);
-	if(atoi(line.c_str())==0)	// read in solution mode option (0 = newton-raphson, 1 = steepest-descent)
+	nr_solve = atoi(line.c_str());	// read in solution mode option (0 = newton-raphson, 1 = BFGS, 2 = DFP, 3 = steepest-descent, 4 = conj_grad)
+	if(nr_solve == 1)
 	{
-		nr_solve=true;
+		do_bfgs = true;
 	}
 	else
 	{
-		nr_solve=false;
+		do_bfgs = false;
+		if(nr_solve == 2)
+		{
+			nr_solve = 1; 	// internally use the same nr_solve value for all quasi newton methods, with do_bfgs differentiating the two
+		}
 	}
 
 	getline(fout,line);

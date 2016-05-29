@@ -149,7 +149,7 @@ file:///opt/casa/code/xmlcasa/xml/casa.xsd">
          <value>0</value>
     </param>
     
-    <param type="boolean" name="Solver">
+    <param type="int" name="Solver">
       <description>0 = Newton-Raphson (default). 1 = Steepest descent (slower)</description>
          <value>False</value>
     </param>

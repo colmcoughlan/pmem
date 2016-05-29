@@ -30,7 +30,7 @@ int zero_array(double* array, int imsize);
 
 int main()
 {
-	cout<<"PMEM version 1.03"<<endl;
+	cout<<"PMEM version 1.04"<<endl;
 
 	fitsinfo_map fitsi[4];
 
@@ -49,8 +49,9 @@ int main()
 	bool converged_temp;
 	bool conserve_flux;
 	bool estimate_flux;
+	bool do_bfgs;
 	bool debug;
-	bool nr_solve;
+	int nr_solve;
 
 	double current_rms[4];	// current Stokes I, Q, U , V residual rms
 	double min_rms[] = {1e99,1e99,1e99,1e99};	// minimum Stokes I residual rms achieved (should be updated almost every iteration)
@@ -99,6 +100,11 @@ int main()
 	double** current_residuals;
 	double** new_residuals;
 	double** convolved_model;
+	
+	double** gold;	// only used if using conjugate gradient method
+	double** gnew;
+	double** hold;
+	double** hnew;
 
 	double* dirty_beam;
 	fftw_complex* dirty_beam_ft;
@@ -120,8 +126,8 @@ int main()
 	convergence_tolerance=0.1;
 	
 	cout<<"Reading driver"<<endl;
-	err = read_driver("mempy_driver.dat", npol, filename_dirty_map, filename_dirty_beam, filename_default_map, filename_mask, zsf, conserve_flux
-	, rms_theoretical, niter, restoring_beam, noise_box, acceleration_factor, q_factor, pol_upweight_factor, output_name, ignore_edge_pixels, nr_solve, debug);
+	err = read_driver("mempy_driver.dat", npol, filename_dirty_map, filename_dirty_beam, filename_default_map, filename_mask, zsf, conserve_flux, estimate_flux
+	, rms_theoretical, niter, restoring_beam, noise_box, acceleration_factor, q_factor, pol_upweight_factor, output_name, ignore_edge_pixels, nr_solve, do_bfgs, debug);
 	if( err !=0 )
 	{
 		cout<<"Error reading from "<<"mempy_driver.dat"<<endl;
@@ -201,6 +207,40 @@ int main()
 		convolved_model[i]=new double[imsize2];
 
 		chi2_rms[i] = 0.0;
+	}
+	
+	switch(nr_solve)	// conjugate gradient mode (4) and quasi-netwon modes (1) need extra memory
+	{
+		case 4:
+			gold = new double*[npol];
+			gnew = new double*[npol];
+			hold = new double*[npol];
+			hnew = new double*[npol];
+		
+			for(i=0;i<npol;i++)
+			{
+				gold[i]=new double[imsize2];
+				gnew[i]=new double[imsize2];
+				hold[i]=new double[imsize2];
+				hnew[i]=new double[imsize2];
+			}
+			break;
+			
+		case 1:
+			gold = new double*[npol];
+			hold = new double*[npol];
+			hnew = new double*[npol];
+		
+			for(i=0;i<npol;i++)
+			{
+				gold[i]=new double[imsize2];
+				hold[i]=new double[imsize2];
+				hnew[i]=new double[imsize2];
+			}
+			break;
+		
+		default:
+			break;
 	}
 
 	if(err!=0)
@@ -535,10 +575,10 @@ int main()
 	beta_old = 0.0;
 	gamma_old = 0.0;
 	
-	alpha = 1.0;
+	alpha = 0.0;
 	if(npol > 1)
 	{
-		beta = 1.0;
+		beta = 0.0;
 	}
 	else
 	{
@@ -546,16 +586,13 @@ int main()
 	}
 	if(conserve_flux)
 	{
-		gamma = 1.0;
+		gamma = 0.0;
 	}
 	else
 	{
-		gamma = 1.0;
+		gamma = 0.0;
 	}
 
-
-
-	cout<<"Initial central Stokes I rms =  "<<current_residuals[0][(imsize*imsize + imsize)/2]<<endl;
 
 /*
 #########################################################################################################################
@@ -575,32 +612,66 @@ int main()
 	while(!converged && ctr < niter)
 	{
 		ctr++;
-		if(nr_solve)
+		switch(nr_solve)
 		{
-//			printf("Outer Address of x is %p\n", (void *)current_model);  
-			err = newton_raphson(current_model, new_model, current_residuals, new_residuals, default_map2, mask, convolved_model, 
-			dirty_beam_ft, complex_buff, double_buff, pad_factor, forward_transform, backward_transform, dirty_map, grad, alpha, beta, 
-			gamma, alpha_old, beta_old, gamma_old, force_chi2_method, zsf, imsize, ignore_edge_pixels, imin, imax, min_flux, npol, q, 
-			pol_upweight_factor, chi2_rms, rms_theoretical, current_rms, noise_box, acceleration_factor, old_step_length1, 
-			old_rescale_step, conserve_flux, debug, ctr);
-			if(err!=0)
-			{
-				cout<<"Error!"<<endl;
+//			printf("Outer Address of x is %p\n", (void *)current_model);
+			// newton solver (a la Cornwell) (BFGS or DFP)
+			case 0 :
+				err = newton_raphson(current_model, new_model, current_residuals, new_residuals, default_map2, mask, convolved_model, 
+				dirty_beam_ft, complex_buff, double_buff, pad_factor, forward_transform, backward_transform, dirty_map, grad, alpha, beta, 
+				gamma, alpha_old, beta_old, gamma_old, force_chi2_method, zsf, imsize, ignore_edge_pixels, imin, imax, min_flux, npol, q, 
+				pol_upweight_factor, chi2_rms, rms_theoretical, current_rms, noise_box, acceleration_factor, old_step_length1, 
+				old_rescale_step, conserve_flux, debug, ctr);
+				if(err!=0)
+				{
+					cout<<"Error!"<<endl;
+					goto free_mem_exit;
+				}
+				break;
+				
+			// quasi-newton solver (BFGS or DFP)
+			case 1 :
+				err = quasi_newton(current_model, new_model, current_residuals, new_residuals, default_map2, mask, convolved_model, 
+				dirty_beam_ft, complex_buff, double_buff, pad_factor, forward_transform, backward_transform, dirty_map, grad, alpha, beta, 
+				gamma, alpha_old, beta_old, gamma_old, force_chi2_method, zsf, imsize, ignore_edge_pixels, imin, imax, min_flux, npol, q, 
+				pol_upweight_factor, chi2_rms, rms_theoretical, current_rms, noise_box, acceleration_factor, old_step_length1, 
+				old_rescale_step, conserve_flux, debug, ctr, hold, hnew, gold, do_bfgs);
+				if(err!=0)
+				{
+					cout<<"Error!"<<endl;
+					goto free_mem_exit;
+				}
+				break;
+				
+			case 3 :
+				err = steepest_descent(current_model, new_model, current_residuals, new_residuals, default_map2, mask, convolved_model, 
+				dirty_beam_ft, complex_buff, double_buff, pad_factor, forward_transform, backward_transform, dirty_map, alpha, beta, 
+				gamma, alpha_old, beta_old, gamma_old, zsf, imsize, ignore_edge_pixels, imin, imax, min_flux, npol, q, 
+				pol_upweight_factor, chi2_rms, rms_theoretical, current_rms, noise_box, old_step_length1, 
+				old_rescale_step, conserve_flux, debug, ctr);
+				if(err!=0)
+				{
+					cout<<"Error!"<<endl;
+					goto free_mem_exit;
+				}
+				break;
+				
+			case 4 :
+				err = conj_gradient(current_model, new_model, current_residuals, new_residuals, default_map2, mask, convolved_model, 
+				dirty_beam_ft, complex_buff, double_buff, pad_factor, forward_transform, backward_transform, dirty_map, alpha, beta, 
+				gamma, alpha_old, beta_old, gamma_old, zsf, imsize, ignore_edge_pixels, imin, imax, min_flux, npol, q, 
+				pol_upweight_factor, chi2_rms, rms_theoretical, current_rms, noise_box, old_step_length1, 
+				old_rescale_step, conserve_flux, debug, ctr, hold, hnew, gold, gnew);
+				if(err!=0)
+				{
+					cout<<"Error!"<<endl;
+					goto free_mem_exit;
+				}
+				break;
+				
+			default:
+				cout<<"Error - undefined solver mode selected"<<endl;
 				goto free_mem_exit;
-			}
-		}
-		else
-		{
-			err = steepest_descent(current_model, new_model, current_residuals, new_residuals, default_map2, mask, convolved_model, 
-			dirty_beam_ft, complex_buff, double_buff, pad_factor, forward_transform, backward_transform, dirty_map, alpha, beta, 
-			gamma, alpha_old, beta_old, gamma_old, zsf, imsize, ignore_edge_pixels, imin, imax, min_flux, npol, q, 
-			pol_upweight_factor, chi2_rms, rms_theoretical, current_rms, noise_box, old_step_length1, 
-			old_rescale_step, conserve_flux, debug, ctr);
-			if(err!=0)
-			{
-				cout<<"Error!"<<endl;
-				goto free_mem_exit;
-			}
 		}
 
 
@@ -730,7 +801,7 @@ int main()
 
 	if(debug)
 	{
-		if(newton_raphson)
+		if(nr_solve < 3)
 		{
 			cout<<"First step, second step, step limit = "<<step_length1<<" , "<<rescale_step<<" , "<<step_limit<<endl;	// output some info
 			cout<<"GradJ.J, Grad1.1, J0, J1 = "<<grad.JJ<<" , "<<grad.II<<" , "<<J0<<" , "<<J1<<endl;
@@ -895,6 +966,38 @@ int main()
 	fftw_free(dirty_beam_ft);
 	fftw_free(double_buff);
 	fftw_free(complex_buff);
+	
+	switch(nr_solve)
+	{
+		case 4:
+			for(i=0;i<npol;i++)
+			{
+				delete[] hold[i];
+				delete[] hnew[i];
+				delete[] gold[i];
+				delete[] gnew[i];
+			}
+			delete[] hold;
+			delete[] hnew;
+			delete[] gold;
+			delete[] gnew;
+			break;
+		
+		case 1:
+			for(i=0;i<npol;i++)
+			{
+				delete[] hold[i];
+				delete[] hnew[i];
+				delete[] gold[i];
+			}
+			delete[] hold;
+			delete[] hnew;
+			delete[] gold;
+			break;
+			
+		default:
+			break;
+	}
 
 
 	cout<<"End of program"<<endl;

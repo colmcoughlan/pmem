@@ -28,7 +28,7 @@ int new_ABG(gradient_structure grad , double delta_E , double delta_F , double d
 	double alpha2 , beta2 , gamma2;
 	double dalpha , dbeta , dgamma;
 
-	double quad_tol = 0.1;	// tolerance for checking if the changes in alpha etc. are "small enough". This is the MEM's equivalent of Gain. Keep very well under one.
+	double quad_tol = 0.01;	// tolerance for checking if the changes in alpha etc. are "small enough". This is the MEM's equivalent of Gain. Keep very well under one.
 	double chi2_mode_tol = 0.05;	// MEM gain tolerance. If lower than this MEM is progressing slowly.
 
 	int err;
@@ -264,12 +264,12 @@ int new_ABG(gradient_structure grad , double delta_E , double delta_F , double d
 
 
 	// decide on alpha
-/*
+
 	cout<<"l = "<<l<<", chi2_mode_tol = "<<chi2_mode_tol<<endl;
 	cout<<"alpha1 = "<<alpha1<<", alpha2 = "<<alpha2<<endl;
 	cout<<"beta1 = "<<beta1<<", beta2 = "<<beta2<<endl;
 	cout<<"gamma1 = "<<gamma1<<", gamma2 = "<<gamma2<<endl;
-*/
+
 
 	if( (l < chi2_mode_tol or alpha1 <=0.0) or force_chi2_method )
 	{
@@ -302,11 +302,11 @@ int new_ABG(gradient_structure grad , double delta_E , double delta_F , double d
 	{
 		if( (l < chi2_mode_tol or gamma1 <=0.0) or force_chi2_method )
 		{
-			gamma=max(gamma2,0.0);
+			gamma=max(gamma2, 0.0);
 		}
 		else
 		{
-			gamma=max(gamma1,0.0);
+			gamma=max(gamma1, 0.0);
 		}
 	}
 

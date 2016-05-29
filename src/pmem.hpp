@@ -37,18 +37,11 @@
 #include "CE_functions.hpp"
 #include "FT_convolution.hpp"
 #include "map_stats.hpp"
-#include "steepest_descent.hpp"
+#include "gradient_methods.hpp"
+#include "variable_metric_methods.hpp"
 
 extern "C" {
 	#include "quickfits.h"
 };
 
-// warning : make sure to pass pointers to current and new models and residuals by reference, since they swap sometimes!
 
-int newton_raphson(double**& current_model, double**& new_model, double**& current_residuals, double**& new_residuals, 
-double* default_map2, double* mask, double** convolved_model, fftw_complex* dirty_beam_ft, fftw_complex* complex_buff, 
-double* double_buff, int pad_factor, fftw_plan& forward_transform, fftw_plan& backward_transform, double** dirty_map, 
-gradient_structure& grad, double& alpha, double& beta, double& gamma, double& alpha_old, double& beta_old, double& gamma_old, 
-bool force_chi2_method, double zsf, int imsize, int ignore_edge_pixels, double& imin, double& imax, double min_flux, int npol, 
-double& q, double pol_upweight_factor, double* chi2_rms, double* rms_theoretical, double* current_rms, int* noise_box, 
-double acceleration_factor, double& old_step_length1, double& old_rescale_step, bool conserve_flux, bool debug, int ctr);
