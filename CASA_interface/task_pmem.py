@@ -8,23 +8,25 @@ import os
 import pickle
 from taskinit import *
 
+pmem_path = 'path'
+
 
 def pmem(
-              nbrpols,
-              FilenameofI,
-              FilenameofQ,
-              FilenameofU,
-              FilenameofV,
-              Filenameofdirtybeam,
-              FilenameofdefaultMap,
-              Filenameofdefaultmask,
-              estimatedspacingflux,
-              conservefluxmode,
-              rmsI,
-              rmsQ,
-              rmsU,
-              rmsV,
-              nbreofiteration,
+              npol,
+              imap,
+              qmap,
+              umap,
+              vmap,
+              dirty_beam,
+              default_map,
+              mask,
+              flux,
+              fluxmode,
+              inoise,
+              qnoise,
+              unoise,
+              vnoise,
+              niter,
               bmaj,
               bmin,
               bpa,
@@ -32,34 +34,32 @@ def pmem(
               blcy,
               trcx,
               trcy,
-              accelerationfactor,
+              afactor,
               qfactor,
-              polarisationfactor,
-              outputname,
-              ignoreedgepixels,
-              Solver,
-              debug):
+              polfactor,
+              outname,
+              edgepixels,
+              solver,
+              verbose):
 	casalog.filter('INFO')
         casalog.origin('pmem')
 
-	l = [nbrpols, FilenameofI, FilenameofQ, FilenameofU, FilenameofV, Filenameofdirtybeam, FilenameofdefaultMap, Filenameofdefaultmask, estimatedspacingflux, conservefluxmode, rmsI, rmsQ, rmsU, rmsV, nbreofiteration, bmaj, bmin, bpa, blcx, blcy, trcx, trcy, accelerationfactor, qfactor, polarisationfactor, outputname, ignoreedgepixels, Solver, debug]
+	l = [npol, imap, qmap, umap, vmap, dirty_beam, default_map, mask, flux, fluxmode, inoise, qnoise, unoise, vnoise, niter, bmaj, bmin, bpa, blcx, blcy, trcx, trcy, afactor, qfactor, polfactor, outname, edgepixels, solver, verbose]
 
   
      
 
-	f = open('mempy_driver.dat','w') # create a file named mempy_driver.dat
-        for i in range(len(l)):             # write in this file the parameters of the list l (one by line)
-        	f.write(  str(l[i]) +'\n') 
-         
-        f.close()
-	os.system('/home/quentin/mem_code/pmem-master/pmem > pmem_log.txt') #close the file and execute the pmem code with the right link !
+	with open('pmem.parset', 'w') as f: # create parset file
+		for i in range(len(l)):             # write in this file the parameters of the list l (one by line)
+			f.write(  str(l[i]) +'\n') 
+
+	os.system(pmem_path) #close the file and execute the pmem code with the right link !
 	casalog.filter('INFO')
 	casalog.origin('pmem')
-	
-	g = open('pmem_log.txt','r')	
-	for ligne in g:
-    		para = ligne.strip()
-    		casalog.post(para)
-	g.close()
-
+'''
+	f = open('pmem_log.txt','r')	
+	for line in f:
+    		casalog.post( line.strip() )
+	f.close()
+'''
    

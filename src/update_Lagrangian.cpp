@@ -264,12 +264,12 @@ int new_ABG(gradient_structure grad , double delta_E , double delta_F , double d
 
 
 	// decide on alpha
-
+/*
 	cout<<"l = "<<l<<", chi2_mode_tol = "<<chi2_mode_tol<<endl;
 	cout<<"alpha1 = "<<alpha1<<", alpha2 = "<<alpha2<<endl;
 	cout<<"beta1 = "<<beta1<<", beta2 = "<<beta2<<endl;
 	cout<<"gamma1 = "<<gamma1<<", gamma2 = "<<gamma2<<endl;
-
+*/
 
 	if( (l < chi2_mode_tol or alpha1 <=0.0) or force_chi2_method )
 	{

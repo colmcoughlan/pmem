@@ -89,7 +89,7 @@ int main()
 	double alpha_old, beta_old, gamma_old;
 	bool force_chi2_method = false;
 	bool have_mask;
-	bool scale_residual = false;
+	bool scale_residual = true;	// may expose this option to user at some stage
 	int imsize2_unmasked;
 
 
@@ -126,11 +126,12 @@ int main()
 	convergence_tolerance=0.1;
 	
 	cout<<"Reading driver"<<endl;
-	err = read_driver("mempy_driver.dat", npol, filename_dirty_map, filename_dirty_beam, filename_default_map, filename_mask, zsf, conserve_flux, estimate_flux
+	line.assign("pmem.parset");	// name of parset file
+	err = read_driver(line.c_str(), npol, filename_dirty_map, filename_dirty_beam, filename_default_map, filename_mask, zsf, conserve_flux, estimate_flux
 	, rms_theoretical, niter, restoring_beam, noise_box, acceleration_factor, q_factor, pol_upweight_factor, output_name, ignore_edge_pixels, nr_solve, do_bfgs, debug);
 	if( err !=0 )
 	{
-		cout<<"Error reading from "<<"mempy_driver.dat"<<endl;
+		cout<<"Error reading from "<<line<<endl;
 		cout<<"Exiting program..."<<endl;
 		return(1);
 	}
@@ -575,10 +576,10 @@ int main()
 	beta_old = 0.0;
 	gamma_old = 0.0;
 	
-	alpha = 0.0;
+	alpha = 1.0;
 	if(npol > 1)
 	{
-		beta = 0.0;
+		beta = 1.0;
 	}
 	else
 	{
@@ -586,7 +587,7 @@ int main()
 	}
 	if(conserve_flux)
 	{
-		gamma = 0.0;
+		gamma = 1.0;
 	}
 	else
 	{
@@ -812,6 +813,14 @@ int main()
 			cout<<"GradE.J, GradF.J, GradG.J = "<<grad.EJ<<" , "<<grad.FJ<<" , "<<grad.GJ<<endl;
 		}
 	}
+	
+	// find EXACT final residuals (in case of interpolation)
+	
+	for(i=0;i<npol;i++)	// calculate convolved final models and their residuals
+	{
+		convolve( current_model[i] , dirty_beam_ft , imsize , pad_factor  , convolved_model[i] , forward_transform , backward_transform , double_buff , complex_buff);
+		chi2_rms[i] = get_residual_map( dirty_map[i] , convolved_model[i] , new_residuals[i] , imsize, ignore_edge_pixels );
+	}
 
 
 	// find peak of dirty beam for Gaussian clean beam
@@ -840,7 +849,7 @@ int main()
 	ft_beam(new_model[0] , dirty_beam_ft , imsize , pad_factor  , forward_transform , double_buff , complex_buff);	// get ft of restoring beam
 
 
-	for(i=0;i<npol;i++)	// calculate convolved final models
+	for(i=0;i<npol;i++)	// calculate convolved final models and their residuals
 	{
 		convolve( current_model[i] , dirty_beam_ft , imsize , pad_factor  , convolved_model[i] , forward_transform , backward_transform , double_buff , complex_buff);
 	}

@@ -47,7 +47,6 @@ double cal_step_sd(double** model , double** residual, double* mask, double* def
 			// Find the total polarised flux, P
 			if(mask[ctr] > 0)
 			{
-
 				p = 0.0;
 				for(k=1;k<npol;k++)
 				{

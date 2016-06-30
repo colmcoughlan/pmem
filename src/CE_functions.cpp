@@ -778,6 +778,113 @@ int interpolate_models(double** current_model , double** new_model , double frac
 }
 
 /*
+	interpolate_model_residual
+
+	interpolate_models interpolates current models and residuals
+	It also enforces a minimum flux and makes sure the polarisation doesn't do anything strange
+
+	inputs:
+
+		current_model = the current model Stokes I, Q, U maps
+		new_model = the new model Stokes I, Q, U maps
+		current_residual, new_residual
+		frac_new = the weighting factor of the new Stokes I, Q, U maps
+		imsize2 = the number of pixels in a map
+		npol = the number of polarisations being deconvolved
+
+	outputs:
+		current_model = the interpolated model maps
+		on return, 0
+*/
+
+int interpolate_models_residuals(double** current_model , double** new_model, double** current_residuals, double**new_residuals , double frac_new , int imsize, int ignore_pixels , int npol, double min_flux, double* chi2_rms)
+{
+	double frac_old , iold, inew , pnew , factor;
+	int i , j, k, ctr;
+	int imsize2 = imsize * imsize;
+	int right_pixel_limit = imsize - ignore_pixels;
+	double chi2i = 0.0;
+	double chi2p = 0.0;
+
+	frac_old = 1 - frac_new;
+
+	#pragma omp parallel for collapse(2) reduction( +: chi2i, chi2p) private( ctr , inew , pnew , factor , k, iold)
+	for(i=ignore_pixels;i<right_pixel_limit;i++)
+	{
+		for(j=ignore_pixels;j<right_pixel_limit;j++)
+		{
+			ctr = i * imsize + j;
+			// First interpolate the Stokes I part
+
+			iold = current_model[0][ctr];
+			inew = frac_old * current_model[0][ctr] + frac_new * new_model[0][ctr];
+			
+			if(inew > min_flux)
+			{
+				current_model[0][ctr] = inew;
+				current_residuals[0][ctr] = frac_old * current_residuals[0][ctr] + frac_new * new_residuals[0][ctr];
+			}
+			else
+			{
+				current_model[0][ctr] = min_flux;
+				current_residuals[0][ctr] = (min_flux/iold) * current_residuals[0][ctr];
+			}
+			chi2i += (current_residuals[0][ctr]*current_residuals[0][ctr]);
+
+			// Now interpolate Stokes Q and U, making sure that the resulting m is an element of [0,1]
+
+			if(npol > 1)
+			{
+				pnew = 0.0;
+				for(k=1;k<npol;k++)
+				{
+					current_model[k][ctr] = frac_old * current_model[k][ctr] + frac_new * new_model[k][ctr];
+					current_residuals[k][ctr] = frac_old * current_residuals[k][ctr] + frac_new * new_residuals[k][ctr];
+					pnew += current_model[k][ctr] * current_model[k][ctr];
+					chi2p += (current_residuals[k][ctr]*current_residuals[k][ctr]);
+				}
+				pnew = sqrt(pnew);
+
+				// Set a factor to ensure that m, the fractional polarisation, is an element of [0,1]
+
+				if( pnew < inew )
+				{
+					factor = 1.0;
+				}
+				else
+				{
+					factor = 0.8 * inew / pnew;
+				}
+
+				// apply interpolation
+
+				if(factor < 1.0)
+				{
+					for(k=1;k<npol;k++)	
+					{
+							current_model[k][ctr] = factor * current_model[k][ctr];
+					}
+				}
+			}
+		}
+	}
+	
+	chi2_rms[0] = chi2i;
+	chi2i = 0.0;
+	for(k=1;k<npol;k++)
+	{
+		chi2i += chi2_rms[k];
+	}
+	chi2p = chi2p / chi2i;
+	for(k=1;k<npol;k++)
+	{
+		chi2_rms[k] = chi2_rms[k] * chi2p;
+	}
+
+	return(0);
+}
+
+/*
 	interpolate_residuals
 
 	interpolate_residuals interpolates current resdiuals and new resdiuals if necessary.

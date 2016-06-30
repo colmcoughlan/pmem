@@ -8,154 +8,155 @@ file:///opt/casa/code/xmlcasa/xml/casa.xsd">
 
 <task type="function" name="pmem" category="imaging">
 
-  <shortdescription>run pmem algorithm</shortdescription>
+  <shortdescription>Execute external PMEM program through CASA framework</shortdescription>
       
-  <description>later</description>
+  <description>PMEM deconvolves radio images using their dirty maps and beam. It uses the Maximum Entropy Method with a form of entropy that allows
+  the deconvolution of polarisation (Stokes Q, U, V) data.</description>
 
   <input>
 
-    <param type="int" name="nbrpols" >
-      <description>number of pols</description>
+    <param type="int" name="npol" >
+      <description>Number of polarisations (minimum 1).</description>
+         <value>1</value>
+    </param>
+    
+    <param type="string" name="imap">
+      <description>Stokes I dirty map filename (FITS file).</description>
+         <value></value>
+    </param>
+    
+    <param type="string" name="qmap" >
+      <description>Stokes Q dirty map filename (FITS file).</description>
+         <value></value>
+    </param>
+    
+    <param type="string" name="umap" >
+      <description>Stokes U dirty map filename (FITS file).</description>
+         <value></value>
+    </param>
+    
+    <param type="string" name="vmap">
+      <description>Stokes V dirty map filename (FITS file).</description>
+         <value></value>
+    </param>
+    
+    <param type="string" name="dirty_beam">
+      <description>Dirty beam FITS file.</description>
+         <value></value>
+    </param>
+    
+    <param type="string" name="default_map">
+      <description>Default map FITS file (blank for none).</description>
+         <value>"0"</value>
+    </param>
+    
+    <param type="string" name="mask">
+      <description>Mask FITS file name (blank for none).</description>
+         <value></value>
+    </param>
+    
+    <param type="double" name="flux">
+      <description>Estimated flux (Jy).</description>
          <value>0</value>
     </param>
     
-    <param type="string" name="filenameI">
-      <description>filename of I</description>
-         <value></value>
-    </param>
-    
-    <param type="string" name="filenameQ" >
-      <description>filename of Q</description>
-         <value></value>
-    </param>
-    
-    <param type="string" name="filenameU" >
-      <description>filename of U</description>
-         <value></value>
-    </param>
-    
-    <param type="string" name="filenameV">
-      <description>filename of V></description>
-         <value></value>
-    </param>
-    
-    <param type="string" name="filenamedirtybeam">
-      <description>filename of dirty beam</description>
-         <value></value>
-    </param>
-    
-    <param type="string" name="filenamedefaultmap">
-      <description>filename of default map</description>
-         <value></value>
-    </param>
-    
-    <param type="string" name="filenamedefaultmask">
-      <description>filename of default mask</description>
-         <value></value>
-    </param>
-    
-    <param type="double" name="estimatedspacingflux">
-      <description>estimated spacing flux</description>
+    <param type="int" name="fluxmode">
+      <description>Flux conservation mode. 0 = None. 1 = Strict. 2 = Lax.</description>
          <value>0</value>
-    </param>
-    
-    <param type="boolean" name="conservefluxmode">
-      <description>conserve flux mode</description>
-         <value>False</value>
     </param>
      
-    <param type="double" name="rmsI">
-      <description>rms theorical I</description>
+    <param type="double" name="inoise">
+      <description>Stokes I final noise estimate (Jy/beam).</description>
          <value>0</value>
     </param>
 
-     <param type="double" name="rmsQ">
-      <description>rms theorical Q</description>
+     <param type="double" name="qnoise">
+      <description>Stokes Q final noise estimate (Jy/beam).</description>
          <value>0</value>
     </param>
     
-    <param type="double" name="rmsU">
-      <description>rms theorical U</description>
+    <param type="double" name="unoise">
+      <description>Stokes U final noise estimate (Jy/beam).</description>
          <value>0</value>
     </param>
     
-    <param type="double" name="rmsV">
-      <description>rms theorical V</description>
+    <param type="double" name="vnoise">
+      <description>Stokes V final noise estimate (Jy/beam).</description>
          <value>0</value>
     </param>
     
-    <param type="int" name="nbrinter">
-      <description>number of interation</description>
+    <param type="int" name="niter">
+      <description>Maximum number of iterations allowed.</description>
          <value>0</value>
     </param>
     
     <param type="double" name="bmaj">
-      <description>bmaj</description>
+      <description>Major axis of restoring beam (0 for CLEAN beam).</description>
          <value>0</value>
     </param>
    
     <param type="double" name="bmin">
-      <description>bmin</description>
+      <description>Minor axis of restoring beam (0 for CLEAN beam).</description>
          <value>0</value>
     </param>
    
     <param type="double" name="bpa">
-      <description>bpa</description>
+      <description>Position angle of restoring beam (0 for CLEAN beam).</description>
          <value>0</value>
     </param>
    
     <param type="int" name="blcx">
-      <description>blcx</description>
+      <description>Coordinates of box used to estimate noise via RMS. Bottom-left corner, X coordinate.</description>
          <value>0</value>
     </param>
    
     <param type="int" name="blcy">
-      <description>blcy</description>
+      <description>Coordinates of box used to estimate noise via RMS. Bottom-left corner, Y coordinate.</description>
          <value>0</value>
     </param>
    
     <param type="int" name="trcx">
-      <description>trcx</description>
+      <description>Coordinates of box used to estimate noise via RMS. Top-right corner, X coordinate.</description>
          <value>0</value>
     </param>
    
     <param type="int" name="trcy">
-      <description>trcy</description>
+      <description>Coordinates of box used to estimate noise via RMS. Top-right corner, Y coordinate.</description>
          <value>0</value>
     </param>
    
-    <param type="double" name="accelfactor">
-      <description>acceleration factor</description>
-         <value>0</value>
+    <param type="double" name="afactor">
+      <description>PMEM acceleration factor. Increase for faster convergence, decrease for more stable convergence.</description>
+         <value>1.0</value>
     </param>
    
     <param type="double" name="qfactor">
-      <description>q factor</description>
-         <value>0</value>
+      <description>PMEM Hessian approximation factor. Decrease for faster convergence, increase for more stable convergence.</description>
+         <value>1.0</value>
     </param>
    
     <param type="double" name="polfactor">
-      <description>polarisation factor</description>
-         <value>0</value>
+      <description>PMEM polarisation weights. Increase to increase weight of polarisation maps relative to Stokes I.</description>
+         <value>1.0</value>
     </param>
    
-    <param type="string" name="outputname">
-      <description>output name</description>
+    <param type="string" name="outname">
+      <description>Stem of output FITS file names.</description>
          <value></value>
     </param>
    
-    <param type="int" name="ignoreedgepixels">
-      <description>ignore edge pixels</description>
+    <param type="int" name="edgepixels">
+      <description>Number of pixels around edge of map to blank to avoid aliasing.</description>
          <value>0</value>
     </param>
     
-    <param type="int" name="Solver">
+    <param type="int" name="solver">
       <description>0 = Newton-Raphson (default). 1 = Steepest descent (slower)</description>
-         <value>False</value>
+         <value>0</value>
     </param>
    
-    <param type="boolean" name="debug">
-      <description>debug mode option</description>
+    <param type="boolean" name="verbose">
+      <description>Verbose mode. Prints additional information.</description>
          <value>False</value>
     </param>
 

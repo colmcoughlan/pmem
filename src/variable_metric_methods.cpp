@@ -148,6 +148,7 @@ int newton_raphson(double**& current_model, double**& new_model, double**& curre
 
 	if( fabs( rescale_step - 1.0) > 0.05 )	// if step 1 was okay, just use it, but if step 2 offers a decent advantage take the average of step1 and step2
 	{
+
 		err = interpolate_models( current_model , new_model , rescale_step , imsize, ignore_edge_pixels , npol, min_flux);	// interpolate between old and new models, scaling with step2
 		if(err!=0)
 		{
@@ -161,6 +162,14 @@ int newton_raphson(double**& current_model, double**& new_model, double**& curre
 			cout<<endl<<"Error detected in interpolation of new and old residuals, err = "<<err<<endl<<endl;
 			return(1);
 		}
+/*
+		err = interpolate_models_residuals( current_model , new_model, current_residuals , new_residuals , rescale_step , imsize, ignore_edge_pixels , npol, min_flux, chi2_rms);
+		if(err!=0)
+		{
+			cout<<endl<<"Error detected in interpolation of new and old residuals, err = "<<err<<endl<<endl;
+			return(1);
+		}
+*/
 	}
 	else
 	{

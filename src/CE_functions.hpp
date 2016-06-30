@@ -32,6 +32,7 @@ int take_step(double** model , double** step , double step_length , double step_
 int take_step_nd(double** model , double** step , double** new_model , double step_length , double step_limit , int imsize, int ignore_pixels , int npol, double total_flux, double max_flux_change, double zsp, double min_flux);
 double check_step(double** old_model , double** new_model , double** new_residual, double* mask, double* default_map2 , double alpha , double beta , double gamma , int imsize, int ignore_pixels , int npol , double q);
 int interpolate_models(double** current_model , double** new_model , double frac_new , int imsize, int ignore_pixels , int npol, double min_flux);
+int interpolate_models_residuals(double** current_model , double** new_model, double** current_residuals, double**new_residuals , double frac_new , int imsize, int ignore_pixels , int npol, double min_flux, double* chi2_rms);
 int interpolate_residuals(double** current_residuals , double** new_residuals, double* chi2_rms , double frac_new , int imsize2 , int npol);
 int copy_model(double**& model1, double**& model2);
 double find_j0(double** model , double** residual, double* mask, double* default_map2 , double alpha , double beta , double gamma , int imsize, int ignore_pixels , int npol, double q , double** new_mod, double** old_mod);
