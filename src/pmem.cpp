@@ -89,7 +89,7 @@ int main()
 	double alpha_old, beta_old, gamma_old;
 	bool force_chi2_method = false;
 	bool have_mask;
-	bool scale_residual = true;	// may expose this option to user at some stage
+	bool scale_residual = false;	// Should be false to be like CLEAN. May expose this option to user at some stage
 	int imsize2_unmasked;
 
 
