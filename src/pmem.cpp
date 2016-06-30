@@ -31,6 +31,7 @@ int zero_array(double* array, int imsize);
 int main()
 {
 	cout<<"PMEM version 1.04"<<endl;
+	cout<<"Colm Coughlan. Dublin Institute for Advanced Studies."<<endl;
 
 	fitsinfo_map fitsi[4];
 
