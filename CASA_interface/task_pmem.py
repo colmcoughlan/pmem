@@ -8,7 +8,7 @@ import os
 import pickle
 from taskinit import *
 
-pmem_path = 'path'
+pmem_path = 'pmem'	# path to the PMEM executable on your system, e.g. /Users/admin/git/pmem/
 
 
 def pmem(

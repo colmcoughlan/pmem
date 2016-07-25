@@ -1,3 +1,5 @@
+To build the casa interface to PMEM you need to edit the task_pmem.py file to replace the "path" variable with the path (this might not be necessary if you add PMEM to your standard $PATH). Then you need to build the interface. Unfortunately this requires a JAVA installation, but is straightforward to do.
+
 The following was taken from the CASA wiki at https://casaguides.nrao.edu/index.php?title=Writing_a_CASA_Task. More information is available in the accompanying pdf.
 
 Building the task
