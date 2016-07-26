@@ -47,7 +47,7 @@ file:///opt/casa/code/xmlcasa/xml/casa.xsd">
     
     <param type="string" name="default_map">
       <description>Default map FITS file (blank for none).</description>
-         <value>"0"</value>
+         <value></value>
     </param>
     
     <param type="string" name="mask">
