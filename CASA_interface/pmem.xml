@@ -151,7 +151,7 @@ file:///opt/casa/code/xmlcasa/xml/casa.xsd">
     </param>
     
     <param type="int" name="solver">
-      <description>0 = Newton-Raphson (default). 1 = Steepest descent (slower)</description>
+      <description>0 = Newton-Raphson (default). 1 = BFGS, 2 = DFP, 3 = steepest-descent, 4 = conj_grad. Options 3 and 4 are very slow.</description>
          <value>0</value>
     </param>
    
