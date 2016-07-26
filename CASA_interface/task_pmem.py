@@ -8,7 +8,7 @@ import os
 import pickle
 from taskinit import *
 
-pmem_path = 'pmem'	# path to the PMEM executable on your system, e.g. /Users/admin/git/pmem/
+pmem_path = '../pmem'	# path to the PMEM executable on your system, e.g. /Users/admin/git/pmem/
 
 
 def pmem(
@@ -53,13 +53,14 @@ def pmem(
 		for i in range(len(l)):             # write in this file the parameters of the list l (one by line)
 			f.write(  str(l[i]) +'\n') 
 
-	os.system(pmem_path) #close the file and execute the pmem code with the right link !
+	os.system(pmem_path + ' > pmem_log.txt') #close the file and execute the pmem code with the right link !
 	casalog.filter('INFO')
 	casalog.origin('pmem')
-'''
-	f = open('pmem_log.txt','r')	
-	for line in f:
-    		casalog.post( line.strip() )
-	f.close()
-'''
+	try:
+		f = open('pmem_log.txt','r')	
+		for line in f:
+				casalog.post( line.strip() )
+		f.close()
+	except:
+		casalog.post( 'Log not found in working directory.' )
    
